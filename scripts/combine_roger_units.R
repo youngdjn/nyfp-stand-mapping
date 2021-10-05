@@ -6,8 +6,8 @@ library(tidyverse)
 d1 = st_read("/home/derek/Documents/data/nyfp-stand-mapping_data/stem-map-polygons/raw/Galloway.shp")
 d2 = st_read("/home/derek/Documents/data/nyfp-stand-mapping_data/stem-map-polygons/raw/Unit178.shp")
 
-d1 = d1[d1$Unit == 150,]
+d1 = d1[d1$Unit %in% c(150,151),]
 
 d = bind_rows(d1,d2)
 
-st_write(d,"/home/derek/Documents/data/nyfp-stand-mapping_data/stem-map-polygons/prepped/tnc_nyfp_2021.kml")
+st_write(d,"/home/derek/Documents/data/nyfp-stand-mapping_data/stem-map-polygons/prepped/tnc_nyfp_2021v2.kml")
