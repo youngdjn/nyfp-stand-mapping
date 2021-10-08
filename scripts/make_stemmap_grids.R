@@ -1,16 +1,11 @@
 library(sf)
 library(dplyr)
 
-pt_df = data.frame(lat = c(   37.74,    37.75),
-                   lon = c(-119.159, -119.169),
-                   name = c("A","B"))
-
-# pt_df = data.frame(lat = c(   37.74),
-#                    lon = c(-119.159)
-# )
+pt_df = data.frame(lat = c(   39.474364,    39.478309,    39.479510,    39.498511,   39.504582,   39.505438),
+                   lon = c(-121.001663, -120.998722,      -120.994875,  -120.882634, -120.877319, -120.875975),
+                   name = c("A","B", "C", "D", "E", "F"))
 
 pt = st_as_sf(pt_df, coords = c("lon","lat"),crs=4326)
-
 
 
 points_albers = st_transform(pt,3310)
@@ -93,6 +88,16 @@ for(i in 1:nrow(points_albers)) {
 
 
 
+
+### Tangential: save plot and base locations
+
+pt_df = data.frame(lat = c(   39.474364,    39.478309,    39.479510,    39.498511,   39.504582,   39.505438,   39.47752426,   39.48045863,   39.499687778,   39.50581512),
+                   lon = c(-121.001663, -120.998722,      -120.994875,  -120.882634, -120.877319, -120.875975, -121.00110469, -120.99671472, -120.883307475, -120.87471868),
+                   name = c("A","B", "C", "D", "E", "F", "Base for A and B", "Base for C", "Base for D", "Base for E and F"))
+
+pt = st_as_sf(pt_df, coords = c("lon","lat"),crs=4326)
+
+st_write(pt, "/home/derek/Documents/data/nyfp-stand-mapping_data/NYFP_plot_and_base_locations.kml")
 
 
 
