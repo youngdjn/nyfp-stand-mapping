@@ -1,5 +1,4 @@
 library(sf)
-library(purrr)
 library(tidyverse)
 library(lidR)
 #library(furrr)
