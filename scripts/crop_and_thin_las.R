@@ -1,17 +1,10 @@
 library(sf)
-library(here)
 library(purrr)
 library(tidyverse)
 library(lidR)
 #library(furrr)
 
-#### Get data dir ####
-# The root of the data directory
-data_dir = readLines(here("data_dir.txt"), n=1)
 
-#### Convenience functions and main functions ####
-
-source(here("scripts/convenience_functions.R"))
 
 
 
