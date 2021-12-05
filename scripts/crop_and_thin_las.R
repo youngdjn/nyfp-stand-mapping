@@ -57,23 +57,25 @@ crop_and_write_las = function(las_file) {
   if(file.exists(filename)) {
     cat("Already exists:",filename,". Skipping.\n")
     return(FALSE)
+  } else {
+
+  
+    ## Read and clip las
+    las = readLAS(las_file)
+    focal_area = st_transform(focal_area,crs(las))
+    las = clip_roi(las,focal_area)
+    las = filter_duplicates(las)
+    las = decimate_points(las, homogenize(50,5))
+    # las = normalize_elevation(las = las, algorithm = dtm_interp, na.rm = TRUE)
+  
+  
+    writeLAS(las,filename)
+  
+    gc()
+  
+    cat("finished.\n")
+  
   }
-
-
-  ## Read and clip las
-  las = readLAS(las_file)
-  focal_area = st_transform(focal_area,crs(las))
-  las = clip_roi(las,focal_area)
-  las = filter_duplicates(las)
-  las = decimate_points(las, homogenize(50,5))
-  # las = normalize_elevation(las = las, algorithm = dtm_interp, na.rm = TRUE)
-
-
-  writeLAS(las,filename)
-
-  gc()
-
-  cat("finished.\n")
 
 }
 
