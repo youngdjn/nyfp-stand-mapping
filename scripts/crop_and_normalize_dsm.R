@@ -15,6 +15,11 @@ data_dir = readLines(here("data_dir.txt"), n=1)
 source(here("scripts/convenience_functions.R"))
 
 
+#### Load project mask
+
+project_mask = vect(datadir("study-area-masks/flight-units.gpkg"))
+
+
 
 #### DTM
 
@@ -44,6 +49,9 @@ crop_and_write_chm = function(dsm_file) {
   }
   
   dsm = rast(dsm_file)
+  
+  dsm = crop(dsm,project_mask %>% project(crs(dsm)))
+  dsm = mask(dsm,project_mask %>% project(crs(dsm)))
   
   # interpolate the the DEM to the res, extent, etc of the DSM
   dtm_interp = resample(dtm %>% project(y=crs(dsm)),dsm)
