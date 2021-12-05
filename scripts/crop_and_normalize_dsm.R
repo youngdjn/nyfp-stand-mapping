@@ -70,7 +70,7 @@ crop_and_write_chm = function(dsm_file) {
   lwr = quantile(v,0.005,na.rm=TRUE)
   upr = quantile(v,0.25,na.rm=TRUE)
   # get the mode within that range
-  v_lowish = v[between(v,lwr,upr)]
+  v_lowish = v[which(between(v,lwr,upr))]
   ground = modal(v_lowish)
   
   chm = chm - ground
