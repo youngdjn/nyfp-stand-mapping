@@ -23,12 +23,9 @@ project_mask = vect(datadir("study-area-masks/flight-units.gpkg"))
 
 #### DTM
 
-dtm = rast(datadir("dems/merged/usgs_dem.tif")) %>% project(y = "epsg:3310")
-dtm_albers = dtm %>% project(y="epsg:3310")
-
 ## get DSM layers 
 dsm_files = list.files(datadir("metashape-products"),pattern=".*_ortho_dsm\\.tif", full.names=TRUE)  # to filter to ones matching a name: pattern=paste0(las_layer_name,".*\\.las")
-cat(dsm_files)
+#cat(dsm_files)
 
 crop_and_write_chm = function(dsm_file) {
   
@@ -49,6 +46,7 @@ crop_and_write_chm = function(dsm_file) {
   }
   
   dsm = rast(dsm_file)
+  crs(dsm) = "epsg:26910"
   
   dsm = crop(dsm,project_mask %>% project(crs(dsm)))
   dsm = mask(dsm,project_mask %>% project(crs(dsm)))
