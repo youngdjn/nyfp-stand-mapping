@@ -28,7 +28,7 @@ dtm_albers = dtm %>% project(y="epsg:3310")
 
 ## get DSM layers 
 dsm_files = list.files(datadir("tnc-nyfp/metashape-products"),pattern=".*_ortho_dsm\\.tif", full.names=TRUE)  # to filter to ones matching a name: pattern=paste0(las_layer_name,".*\\.las")
-
+cat(dsm_files)
 
 crop_and_write_chm = function(dsm_file) {
   
