@@ -1,1 +1,2 @@
-/Users/derek/Library/CloudStorage/Box-Box/projects/nyfp-stand-mapping_data/
+/media/djyoung/Latimer_Drone_Data/tnc-nyfp
+
