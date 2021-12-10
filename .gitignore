@@ -40,3 +40,5 @@ vignettes/*.pdf
 
 # Data dir
 **/data_dir.txt
+*/data_dir.txt
+data_dir.txt
