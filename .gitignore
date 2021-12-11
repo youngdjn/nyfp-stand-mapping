@@ -43,3 +43,4 @@ vignettes/*.pdf
 */data_dir.txt
 /data_dir.txt
 data_dir.txt
+.DS_Store
