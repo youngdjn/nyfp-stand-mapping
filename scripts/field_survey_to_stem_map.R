@@ -21,9 +21,13 @@ plots = plots %>%
          grid_x = str_sub(`Stem Map ID`, 3, 3),
          grid_y = str_sub(`Stem Map ID`, 2, 2))
 
-## For macroplot E, reverse the x coords
+## For macroplot E, reverse the x coords (crew recorded them backward)
 plots[plots$cluster_name=="E",] = plots[plots$cluster_name=="E",] %>%
     mutate(grid_x = recode(grid_x, "1"="2", "2"="1"))
+
+## For macroplot C, reverse the y coords (crew recorded them backward)
+plots[plots$cluster_name=="C",] = plots[plots$cluster_name=="C",] %>%
+  mutate(grid_x = recode(grid_y, "3"="4", "4"="3"))
 
 plots = plots %>%
   mutate(across(c(grid_x,grid_y), as.numeric))
@@ -84,7 +88,7 @@ centers = plots %>%
   summarize(mean_easting = mean(easting),
             mean_northing = mean(northing))
   
-# Bring in the center coords to offset from for each subplot
+# Bring in the center coords in order to offset from for each subplot
 plots = left_join(plots,centers)
 
 plots = plots %>%
@@ -94,3 +98,12 @@ plots = plots %>%
 plots_sf = st_as_sf(plots,coords = c("grid_coord_x", "grid_coord_y"), crs = 26910)
 
 st_write(plots_sf, datadir("ground-mapping-data/plot-processed/plots-gridded.gpkg"))
+
+
+### Turn the plot centers into a plot footprint
+
+plot_footprints = plots_sf %>% st_buffer(30) %>% st_union() %>% st_cast("POLYGON") %>% st_as_sf()
+
+plot_footprints$plotname = c("B","C","E","F")
+
+st_write(plot_footprints, datadir("ground-mapping-data/plot-processed/plot-footprints-coarse.gpkg"), append=FALSE)
