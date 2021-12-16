@@ -3,6 +3,7 @@
 library(sf)
 library(here)
 library(purrr)
+library(furrr)
 library(tidyverse)
 library(terra)
 
@@ -17,7 +18,7 @@ source(here("scripts/convenience_functions.R"))
 
 #### Load project mask
 
-project_mask = vect(datadir("study-area-masks/flight-units.gpkg"))
+project_mask = vect(datadir("study-area-masks/flight-units.gpkg")) %>% buffer(-50)
 
 
 
@@ -28,7 +29,7 @@ dtm_albers = dtm %>% project(y="epsg:3310")
 
 ## get DSM layers 
 dsm_files = list.files(datadir("drone-data/raw/dsms"),pattern=".*_dsm\\.tif", full.names=TRUE)  # to filter to ones matching a name: pattern=paste0(las_layer_name,".*\\.las")
-
+dsm_files = dsm_files[c(1,3,5)]
 
 crop_and_write_chm = function(dsm_file) {
   
@@ -66,7 +67,7 @@ crop_and_write_chm = function(dsm_file) {
   
   ## get ground level
   # it's in the lower 0.005 to 0.1 quantile
-  v = values(chm)
+  v = terra::values(chm)
   lwr = quantile(v,0.005,na.rm=TRUE)
   upr = quantile(v,0.25,na.rm=TRUE)
   # get the mode within that range
@@ -91,6 +92,6 @@ crop_and_write_chm = function(dsm_file) {
   
 }
 
-#plan(multiprocess,workers=3)
+plan(multiprocess,workers=3)
 
 map(dsm_files, crop_and_write_chm)
