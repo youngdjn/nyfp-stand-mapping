@@ -15,6 +15,10 @@ source(here("scripts/convenience_functions.R"))
 
 plots = read_excel(datadir("ground-mapping-data/plot-raw/NorthYubaStemMapping.xlsx"), sheet=2)
 
+## F13 was saved twice by accident. Delete the first
+plots = plots %>%
+  filter(GlobalID != "9b4650fa-1b07-481b-9c48-254b9b7e5342")
+
 #### Get the cluster ID (first letter of plot name) and the subplot grid x and y coords # Note that it is y, x (row, column), but column is reversed for macroplot E
 plots = plots %>%
   mutate(cluster_name = str_sub(`Stem Map ID`, 1, 1),
@@ -27,7 +31,7 @@ plots[plots$cluster_name=="E",] = plots[plots$cluster_name=="E",] %>%
 
 ## For macroplot C, reverse the y coords (crew recorded them backward)
 plots[plots$cluster_name=="C",] = plots[plots$cluster_name=="C",] %>%
-  mutate(grid_x = recode(grid_y, "3"="4", "4"="3"))
+  mutate(grid_y = recode(grid_y, "3"="4", "4"="3"))
 
 plots = plots %>%
   mutate(across(c(grid_x,grid_y), as.numeric))
@@ -67,8 +71,6 @@ plots = plots %>%
 
 # Declination is 13.4 E
 
-deg2rad <- function(deg) {(deg * pi) / (180)}
-
 # for a 1 m northward (y) shift:
 easting = sin(deg2rad(13.4)) # 0.23 m E, 
 northing = cos(deg2rad(13.4)) # 0.97 m N
@@ -97,7 +99,7 @@ plots = plots %>%
 
 plots_sf = st_as_sf(plots,coords = c("grid_coord_x", "grid_coord_y"), crs = 26910)
 
-st_write(plots_sf, datadir("ground-mapping-data/plot-processed/plots-gridded.gpkg"))
+st_write(plots_sf, datadir("ground-mapping-data/plot-processed/plots-gridded.gpkg"), append=FALSE)
 
 
 ### Turn the plot centers into a plot footprint
@@ -107,3 +109,44 @@ plot_footprints = plots_sf %>% st_buffer(30) %>% st_union() %>% st_cast("POLYGON
 plot_footprints$plotname = c("B","C","E","F")
 
 st_write(plot_footprints, datadir("ground-mapping-data/plot-processed/plot-footprints-coarse.gpkg"), append=FALSE)
+
+
+
+#### Tree distance and azimuth to cartesian position ####
+
+trees = read_excel(datadir("ground-mapping-data/plot-raw/NorthYubaStemMapping.xlsx"), sheet=4) %>%
+  select(plot_id = "Plot ID",
+         dist = "Distance (m)",
+         azi = "Azimuth (deg)",
+         species = "Species",
+         status = "Tree Status",
+         health = "Tree Health",
+         dbh = "DBH (cm)",
+         height = "Height (m)",
+         height_acc = "Measurement of Height",
+         notes = "Tree Notes",
+         plot_num = "Plot Number")
+
+# remove duplicates 
+
+trees = unique(trees)
+
+## compute tree x and y offset
+
+trees = trees %>%
+  mutate(azi_true = azi + 13.4) %>%
+  mutate(tree_offset_x = sin(deg2rad(azi_true)),
+         tree_offset_y = cos(deg2rad(azi_true)))
+
+## pull in subplot x and y absolute position and add tree offset to get tree absolute position
+
+trees = left_join(trees,plots %>% select("Stem Map ID","plot_coord_x" = "grid_coord_x","plot_coord_y" = "grid_coord_y"),by=c("plot_id" = "Stem Map ID"))
+
+trees = trees %>%
+  mutate(tree_coord_x = plot_coord_x + tree_offset_x * dist,
+         tree_coord_y = plot_coord_y + tree_offset_y * dist)
+
+trees_sf = st_as_sf(trees,coords = c("tree_coord_x", "tree_coord_y"), crs = 26910)
+
+st_write(trees_sf, datadir("ground-mapping-data/tree-processed/tree-locs-raw.gpkg"), append=FALSE)
+

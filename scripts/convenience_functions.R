@@ -9,3 +9,5 @@ modal = function(v) {
   uniqv <- unique(v)
   uniqv[which.max(tabulate(match(v, uniqv)))]
 }
+
+deg2rad <- function(deg) {(deg * pi) / (180)}
