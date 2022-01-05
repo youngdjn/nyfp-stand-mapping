@@ -11,3 +11,16 @@ modal = function(v) {
 }
 
 deg2rad <- function(deg) {(deg * pi) / (180)}
+
+
+rad2deg = function(rad) {
+  return(rad*180/pi)
+}
+
+# Drop the last "/..." (e.g., the file or final folder) from a path
+path_drop_last = function(x) {
+  elements = strsplit(x,split="/")[[1]]
+  elements_but_last = elements[1:(length(elements)-1)] 
+  shortened_path = paste(elements_but_last,collapse="/")
+  return(shortened_path)
+}
