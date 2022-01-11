@@ -28,15 +28,15 @@ get_closest_tree = function(ground_tree_index, ground_map, drone_map, dist_mat) 
   if(!is.na(ground_tree$final_drone_map_match_id)) return(ground_tree)
   
   # thin drone map to trees within size bounds
-  lwr = ground_tree$Height-ground_tree$Height*search_height_proportion
-  upr = ground_tree$Height+ground_tree$Height*search_height_proportion
+  lwr = ground_tree$height-ground_tree$height*search_height_proportion
+  upr = ground_tree$height+ground_tree$height*search_height_proportion
   drone_map_candidates = drone_map[between(drone_map$height,lwr,upr),]
 
   if(nrow(drone_map_candidates) == 0) return(ground_tree)
   
   # thin to those within distance
   drone_map_candidates = drone_map_candidates %>%
-    filter(distance_to_ground_tree < search_distance_fun(ground_tree$Height))
+    filter(distance_to_ground_tree < search_distance_fun(ground_tree$height))
   
   if(nrow(drone_map_candidates) == 0) return(ground_tree)
   
@@ -153,26 +153,23 @@ compare_tree_maps = function(ground_map, drone_map) {
 
 #### Prep data ####
 
-prep_data = function(ground_map, drone_map, reduced_area) {
+prep_data = function(ground_map, drone_map, reduced_area, unit_id) {
   
   # assign tree IDs
   drone_map$drone_tree_id = 1:nrow(drone_map)
   
   # Clip to extent of ground map (buffered by search radius)
   # formerly: ground_map_footprint = ground_map %>% st_union %>% st_convex_hull
-  if(reduced_area) {
-    ground_map_footprint = st_read(data("study_area_perimeter/smaller_project_mask.geojson")) %>% st_transform(st_crs(drone_map))
-  } else {
-    ground_map_footprint = st_read(data("study_area_perimeter/ground_map_mask_precise.geojson")) %>% st_transform(st_crs(drone_map))
-  }
-
+  ground_map_footprint = st_read(datadir("ground-mapping-data/plot-processed/macroplot-footprint.gpkg")) %>% st_transform(st_crs(drone_map))
   
+  ground_map_footprint = ground_map_footprint %>%
+    filter(macroplot_id == unit_id)
   
   drone_map = st_intersection(drone_map,ground_map_footprint %>% st_buffer(search_distance) )
   ground_map = st_intersection(ground_map,ground_map_footprint %>% st_buffer(search_distance) )  
   
   # Need a label to know if drone map trees were part of a buffered-in polygon
-  ground_map_footprint_bufferin = ground_map_footprint %>% st_buffer(-search_distance*2)
+  ground_map_footprint_bufferin = ground_map_footprint %>% st_buffer(-search_distance)
   drone_map$internal_area = st_intersects(drone_map,ground_map_footprint_bufferin, sparse=FALSE)
   
   # Need a label to know if ground map trees were within the focal polygon
@@ -200,7 +197,7 @@ get_slope = function(y,x) {
 calc_match_stats = function(ground_map, drone_map, drone_map_name, tree_position) {
   
   ground_map_simple = ground_map %>%
-    select(ground_tree_id, final_drone_map_match_id, ground_tree_height = Height, ground_tree_internal_area = internal_area) %>%
+    select(ground_tree_id, final_drone_map_match_id, ground_tree_height = height, ground_tree_internal_area = internal_area) %>%
     mutate(ground_tree_internal_area = as.vector(ground_tree_internal_area))
   drone_map_simple = drone_map %>%
     select(drone_tree_id, drone_tree_height = height, drone_tree_internal_area = internal_area) %>%
@@ -211,10 +208,12 @@ calc_match_stats = function(ground_map, drone_map, drone_map_name, tree_position
   st_geometry(drone_map_simple) = NULL
   drone_ground_match = left_join(drone_map_simple, ground_map_simple, by = c("drone_tree_id"="final_drone_map_match_id"))
   ground_drone_match = right_join(drone_map_simple, ground_map_simple, by = c("drone_tree_id"="final_drone_map_match_id"))
-  
+
   ## Counts of ground trees trees matched to drone trees, by size classes
   ground_drone_match = ground_drone_match %>%
-    filter(ground_tree_internal_area == TRUE) %>% # make sure it's internal to the buffer of ground trees
+    # make sure it's internal to the buffer of ground trees
+    ### Even though the drone tree map extends beyond the ground map, need to buffer in the ground map because we need to allow for drone trees to be claimed by ground trees outside of the focal area; otherwise it is an unfair comparison because only the ground trees we are evaluating are able to claim drone trees, they are not competing with trees beyond the focal area to claim them like they would in reality.
+    filter(ground_tree_internal_area == TRUE) %>% 
     mutate(height_cat = cut(ground_tree_height,breaks = c(-Inf,5,10,20,30,40,Inf), labels = c("0-5","5-10","10-20","20-30","30-40","40+")))
   
   drone_ground_match = drone_ground_match %>%
@@ -261,7 +260,7 @@ calc_match_stats = function(ground_map, drone_map, drone_map_name, tree_position
     mutate(height_err = drone_tree_height - ground_tree_height)
   
 
-  write_csv(trees_matched,data(paste0("drone_map_evals/matched_tree_lists/trees_matched_", drone_map_name,"_",tree_position,".csv")))
+  write_csv(trees_matched,datadir(paste0("drone-map-evals/matched-tree-lists/trees-matched-", drone_map_name,"-",tree_position,".csv")))
   
   
   over10trees = trees_matched %>%
@@ -485,14 +484,14 @@ match_compare_single_wrapper = function(ground_map, drone_map, drone_map_name, m
   }
   
   #### Prep the maps by cropping etc
-  data_prepped = prep_data(ground_map, drone_map, reduced_area = FALSE) # takes about 1 min
+  data_prepped = prep_data(ground_map, drone_map, unit_id = "A") # takes about 1 min
   
   ### Of the trees > 10 m tall, If the drone map has > 5x as many trees as the ground map, or < 1/10, skip it
   n_drone_trees = nrow(data_prepped$drone_map %>% filter(height > 10, internal_area == TRUE))
-  n_ground_trees = nrow(data_prepped$ground_map %>% filter(Height > 10, internal_area == TRUE))
-  if((n_drone_trees > 5*n_ground_trees) | (n_drone_trees < 0.1*n_ground_trees)) {
-    return(FALSE)
-  }
+  n_ground_trees = nrow(data_prepped$ground_map %>% filter(height > 10, internal_area == TRUE))
+  # if((n_drone_trees > 5*n_ground_trees) | (n_drone_trees < 0.1*n_ground_trees)) {
+  #   return(FALSE)
+  # }
 
   ## Run comparison/eval ##
   match_compare_single(data_prepped, drone_map_name = drone_map_name, make_lines_between_matches=make_lines_between_matches)
