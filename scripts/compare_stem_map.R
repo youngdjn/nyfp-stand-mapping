@@ -37,5 +37,6 @@ smallest_size = 20 # smallest tree height to include in a size class for compari
 
 #### Run comparison ####
 
-match_compare_single_wrapper(ground_map = ground_map, drone_map = stem_silva, drone_map_name = "silva", make_lines_between_matches = TRUE)
-match_compare_single_wrapper(ground_map = ground_map, drone_map = stem_ws, drone_map_name = "ws", make_lines_between_matches = TRUE)
+match_compare_single_wrapper(ground_map = ground_map, drone_map = drone_map, drone_map_name = "F", make_lines_between_matches = TRUE)
+
+# b, c, e, f
