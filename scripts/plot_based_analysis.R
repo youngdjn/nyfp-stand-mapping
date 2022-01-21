@@ -14,6 +14,8 @@ source(here("scripts/compare_stem_map_functions.R"))
 d = st_read(datadir("ground-mapping-data/tree-processed/tree-locs-rectified-macroplot.gpkg"))
 st_geometry(d) = NULL
 
+write_csv(d,datadir("ground-mapping-data/tree-processed/ground-survey-tabular.csv"))
+
 # treat them as 8-m plots
 # get total number of trees per macroplot in differen size classes
 d_summ = d %>%
@@ -37,7 +39,8 @@ d_summ = d_summ %>%
   
 d_long = d_summ %>%
   pivot_longer(cols=starts_with("dbh"), names_to="size",values_to ="tpa") %>%
-  mutate(size = recode(size,dbh10 = "10-20",dbh20 = "20-30", dbh30 = "30-40", dbh40 = "> 40"))
+  mutate(size = recode(size,dbh10 = "10-20",dbh20 = "20-30", dbh30 = "30-40", dbh40 = "> 40")) %>%
+  mutate(size = factor(size,levels=c("10-20","20-30","30-40","> 40")))
 
 p = ggplot(d_long, aes(x = size, y = tpa, fill=species)) +
   geom_bar(stat="identity") +
