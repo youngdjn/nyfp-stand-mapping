@@ -1,4 +1,4 @@
-## For each DSM, converts to CHM by subtracting USGS DEM, rescales to 0.12 m, and saves
+## Converts raw field stem map data to spatial
 
 library(sf)
 library(here)
